@@ -61,31 +61,55 @@ Other modules that listen on this port will set themselves to the same color.
 For interoperability, the protocol was designed so that even modules with different WLED versions can sync.
 Therefore, if a WLED 0.4 system receives a WLED 0.3 UDP notification it will apply the primary color but keep its current secondary color.
 
-The UDP packet is currently 24 bytes long. It is laid out in the following:
+The UDP packet is currently 1193ish bytes long. It is laid out in the following:
 
 | Byte Index | Var Name | Description | Notifier Version |
 | --- | --- | --- | --- |
 0 | \- | Packet Purpose Byte* | 0
 1 | callMode | Packet Reason** | 0
 2 | bri | Master Brightness | 0
-3 | col[0] | Primary Red Value | 0
-4 | col[1] | Primary Green Value | 0
-5 | col[2] | Primary Blue Value | 0
+3 | R(mainseg.colors[0]) | Primary Red Value | 0
+4 | G(mainseg.colors[0]) | Primary Green Value | 0
+5 | B(mainseg.colors[0]) | Primary Blue Value | 0
 6 | nightlightActive | Nightlight running? | 0
 7 | nightlightDelayMins | Nightlight Time | 0
-8 | effectCurrent | Effect Index | 0
-9 | effectSpeed | Effect Speed | 0
-10 | white | Primary White Value | 1
+8 | mainseg.mode | Effect Index | 0
+9 | mainseg.speed | Effect Speed | 0
+10 | W(mainseg.colors[0]) | Primary White Value | 1
 11 | \- | Version Byte*** | 1
-12 | colSec[0] | Secondary Red Value | 2
-13 | colSec[1] | Secondary Green Value | 2
-14 | colSec[2] | Secondary Blue Value | 2
-15 | whiteSec | Secondary White Value | 2
-16 | effectIntensity | Effect Intensity | 3
+12 | R(mainseg.colors[1]) | Secondary Red Value | 2
+13 | G(mainseg.colors[1]) | Secondary Green Value | 2
+14 | B(mainseg.colors[1]) | Secondary Blue Value | 2
+15 | W(mainseg.colors[1]) | Secondary White Value | 2
+16 | mainseg.intensity | Effect Intensity | 3
 17 | transitionDelay | Transition Duration Upper | 4
 18 | transitionDelay | Transition Duration Lower | 4
-19 | effectPalette | FastLED palette | 5
-20-23 | - | Zeros | -
+19 | mainseg.palette | FastLED palette | 5
+20 | R(mainseg.colors[2]) | Tertiary Red Value | ?
+21 | G(mainseg.colors[2]) | Tertiary Green Value | ?
+22 | B(mainseg.colors[2]) | Tertiary Blue Value | ?
+23 | W(mainseg.colors[2]) | Tertiary White Value | ?
+24 | followUp | Retransmitted sync packet? | ?
+25 | millis() + strip.timebase | Strip timer length first bit | ?
+26 | millis() + strip.timebase | Strip timer length second bit | ?
+27 | millis() + strip.timebase | Strip timer length third bit | ?
+28 | millis() + strip.timebase | Strip timer length fourth bit | ?
+29 | toki.getTimeSource() | System time source? | ?
+30 | tm.sec | System time seconds first bit? | ?
+31 | tm.sec | System time seconds second bit? | ?
+32 | tm.sec | System time seconds third bit? | ?
+33 | tm.sec | System time seconds fourth bit? | ?
+34 | tm.ms | System time milliseconds first bit? | ?
+35 | tm.ms | System time milliseconds second bit? | ?
+36 | syncGroups | Active sync groups | ?
+37 | strip.hasCCTBus() | Is CCT active | ?
+38 | mainseg.cct | Kelvin value | ?
+39 | strip.getActiveSegmentsNum() | Active segments | ?
+40 | UDP_SEG_SIZE | Size of each segment loop iteration | ?
+41-End | - | Looping segment data | ?
+
+
+
 
 *The notifier protocol is only used if this byte is 0. Otherwise, one of the [UDP Realtime](/interfaces/udp-realtime) protocols will be used.
 
@@ -96,14 +120,17 @@ Every color update has the potential to trigger a notification.
 | --- | --- | --- |
 0 | Initial Boot | Do not notify
 1 | Direct Change via UI or API | notifyDirect?
-2 | Button was pressed | notifyButton?
+2 | Button was pressed/ IR event | notifyButton?
 3 | Update by other notification | Do not notify
 4 | Nightlight activated | notifyDirect?
 5 | Other (Req. with &NN) | Do not notify
-6 | Effect changed | notifyDirect?
+6 | Effect changed | no longer used?
 7 | Hue light changed | notifyHue?
-8 | Preset Cycle active | notifyDirect?
-9 | Updated via Blynk | notifyDirect?
+8 | Preset Cycle active | no longer used?
+9 | Updated via Blynk | no longer used?
+10 | Updated via Alexa | notifyDirect?
+11 | special call mode updates websocket only | Do not notify?
+12 | Preset/macro button was pressed | notifyDirect?
 
 ***This is the version of the UDP protocol.
 
@@ -115,3 +142,10 @@ Every color update has the potential to trigger a notification.
 3 | Effect Intensity supported | 0.5.0
 4 | Transition Time supported | 0.6.0
 5 | Palettes supported | 0.8.0
+6 | ? | ?
+7 | ? | ?
+8 | ? | ?
+9 | ? | ?
+10 | ? | ?
+11 | ? | ?
+12 | ? | ?
